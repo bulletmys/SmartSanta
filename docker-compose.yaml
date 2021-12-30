@@ -1,5 +1,18 @@
 version: "3.5"
 services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./www:/var/www
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - web
+    links:
+      - web
   web:
     container_name: dockerdev
     restart: on-failure
