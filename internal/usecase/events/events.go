@@ -34,7 +34,7 @@ func (u *EventsUC) GetEvent(id string) (*models.Event, error) {
 
 	event.Voted, err = u.usersRepo.CountVoted(id)
 
-	if event.Voted == len(event.Users) && event.Status == models.VOTED {
+	if event.Voted == len(event.Users) && event.Status == models.STARTED {
 		u.StartCountWrapper(event)
 	}
 
