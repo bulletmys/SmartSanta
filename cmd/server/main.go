@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	"SmartSanta/internal/delivery/events"
@@ -43,6 +44,13 @@ func InitDB() *pgxpool.Pool {
 func main() {
 	e := echo.New()
 
+	corsCfg := middleware.CORSConfig{
+		AllowOriginFunc: func(origin string) (bool, error) {
+			return true, nil //todo fix
+		},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	}
+	e.Use(middleware.CORSWithConfig(corsCfg))
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())

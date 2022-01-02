@@ -45,9 +45,9 @@ func (r *Repository) UpdateUser(user *models.User) error {
 func (r *Repository) GetUser(id string) (*models.User, error) {
 	user := models.User{}
 	err := r.db.QueryRow(context.Background(),
-		"select user_id, event_id, name, wish, is_admin from users where user_id::text = $1",
+		"select user_id, count_id, event_id, name, wish, is_admin from users where user_id::text = $1",
 		id,
-	).Scan(&user.ID, &user.EventID, &user.Name, &user.Wish, &user.IsAdmin)
+	).Scan(&user.ID, &user.CountID, &user.EventID, &user.Name, &user.Wish, &user.IsAdmin)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil

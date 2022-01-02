@@ -5,7 +5,9 @@ type EventStatus int
 const (
 	CREATED EventStatus = iota
 	STARTED
-	FINISHED
+	VOTED
+	FAILED
+	SUCCEED
 )
 
 type Event struct {
@@ -18,6 +20,7 @@ type Event struct {
 
 type User struct {
 	ID          string     `json:"id"`
+	CountID     uint64     `json:"count_id"`
 	Name        string     `json:"name"`
 	Wish        string     `json:"wish"`
 	IsAdmin     bool       `json:"is_admin"`
@@ -34,4 +37,9 @@ type UserShort struct {
 type UserWithCountID struct {
 	CountID uint64 `json:"count_id"`
 	Name    string `json:"name"`
+}
+
+type UserWithPreferences struct {
+	CountID     uint64
+	Preferences []uint64
 }
