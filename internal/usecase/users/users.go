@@ -107,7 +107,7 @@ func (u *UsersUC) UpdateUserPreferences(user *models.User) error {
 	}
 
 	if event.Status == models.FAILED {
-		return u.eventsRepo.UpdEventStatus(event.ID, models.VOTED)
+		return u.eventsRepo.UpdEventStatus(event.ID, models.STARTED)
 	}
 
 	return nil
