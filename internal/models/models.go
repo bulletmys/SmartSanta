@@ -45,6 +45,6 @@ type UserWithPreferences struct {
 }
 
 type UserPair struct {
-	CountID     uint64
-	PairCountID uint64
+	SenderID   string
+	ReceiverID string
 }

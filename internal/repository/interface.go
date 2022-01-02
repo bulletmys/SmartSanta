@@ -14,6 +14,7 @@ type Users interface {
 	CreateUser(user *models.User) error
 	UpdateUser(user *models.User) error
 	GetUser(id string) (*models.User, error)
+	GetUserIDByCountID(countID uint64) (string, error)
 	GetPair(id, eventID string) (*models.UserShort, error)
 	MakePairs(users []models.UserPair, eventID string) error
 	GetPreferences(id, eventID string) ([]uint64, error)

@@ -58,6 +58,22 @@ func (r *Repository) GetUser(id string) (*models.User, error) {
 	return &user, nil
 }
 
+func (r *Repository) GetUserIDByCountID(countID uint64) (string, error) {
+	var userID string
+	err := r.db.QueryRow(context.Background(),
+		"select user_id from users where count_id = $1",
+		countID,
+	).Scan(&userID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get user: %v", err)
+	}
+
+	return userID, nil
+}
+
 func (r *Repository) GetPair(id, eventID string) (*models.UserShort, error) {
 	user := models.UserShort{}
 
@@ -88,8 +104,8 @@ func (r *Repository) MakePairs(users []models.UserPair, eventID string) error {
 	for _, u := range users {
 		_, err := r.db.Exec(context.Background(),
 			query,
-			u.CountID,
-			u.PairCountID,
+			u.SenderID,
+			u.ReceiverID,
 			eventID,
 		)
 		if err != nil {

@@ -101,19 +101,27 @@ func convertModelToPreferencesMap(users []models.UserWithPreferences) map[uint64
 	return prefMap
 }
 
-func convertPreferencesMapToModel(prefs map[uint64]uint64) []models.UserPair {
+func (u *EventsUC) convertPreferencesMapToModel(prefs map[uint64]uint64) ([]models.UserPair, error) {
 	users := make([]models.UserPair, len(prefs))
 	i := 0
 
 	for k, v := range prefs {
+		senderID, err := u.usersRepo.GetUserIDByCountID(k)
+		if err != nil {
+			return nil, err
+		}
+		receiverID, err := u.usersRepo.GetUserIDByCountID(v)
+		if err != nil {
+			return nil, err
+		}
 		users[i] = models.UserPair{
-			CountID:     k,
-			PairCountID: v,
+			SenderID:   senderID,
+			ReceiverID: receiverID,
 		}
 		i++
 	}
 
-	return users
+	return users, nil
 }
 
 func (u *EventsUC) MarkFailed(event *models.Event) {
@@ -144,7 +152,14 @@ func (u *EventsUC) StartCount(event *models.Event) {
 		return
 	}
 
-	err = u.usersRepo.MakePairs(convertPreferencesMapToModel(pairs), event.ID)
+	userPairs, err := u.convertPreferencesMapToModel(pairs)
+	if err != nil {
+		log.Printf("failed to get convert pairs: %v", err)
+		u.MarkFailed(event)
+		return
+	}
+
+	err = u.usersRepo.MakePairs(userPairs, event.ID)
 	if err != nil {
 		log.Printf("failed to make pairs: %v", err)
 		u.MarkFailed(event)
