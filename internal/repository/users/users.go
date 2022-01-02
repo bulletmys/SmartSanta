@@ -147,12 +147,13 @@ func (r *Repository) GetUsersByEventID(eventID string) ([]models.UserWithCountID
 		return nil, fmt.Errorf("failed to select event users: %v", err)
 	}
 
+	var isAdmin bool
 	users := make([]models.UserWithCountID, 0)
+
 	defer rows.Close()
 
 	for rows.Next() {
 		var userName models.UserWithCountID
-		var isAdmin bool
 
 		if err := rows.Scan(
 			&userName.Name,
@@ -167,8 +168,8 @@ func (r *Repository) GetUsersByEventID(eventID string) ([]models.UserWithCountID
 		}
 		users = append(users, userName)
 	}
-	if len(users) == 0 {
-		return []models.UserWithCountID{}, nil
+	if len(users) == 0 && !isAdmin {
+		return nil, nil
 	}
 
 	return users, nil
