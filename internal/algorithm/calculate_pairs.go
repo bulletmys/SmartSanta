@@ -70,6 +70,7 @@ func (g *graph) createFinishingOrder() []*node {
 }
 
 func (g *graph) generateScc() {
+	g.scc = make(map[int]*scc)
 	p := 1
 	fo := g.createFinishingOrder()
 	g.resetVisited()
