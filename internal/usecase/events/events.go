@@ -80,6 +80,7 @@ func (u *EventsUC) FinishEvent(id string) error {
 }
 
 func (u *EventsUC) StartCountWrapper(event *models.Event) {
+	log.Printf("Started pairs calculating for event %v", event.ID)
 	go u.StartCount(event)
 }
 
