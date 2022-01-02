@@ -165,4 +165,11 @@ func (u *EventsUC) StartCount(event *models.Event) {
 		u.MarkFailed(event)
 		return
 	}
+
+	err = u.eventsRepo.UpdEventStatus(event.ID, models.SUCCEED)
+	if err != nil {
+		log.Printf("failed to set success event status: %v", err)
+		u.MarkFailed(event)
+		return
+	}
 }
