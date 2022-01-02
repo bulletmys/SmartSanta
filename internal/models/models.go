@@ -43,3 +43,8 @@ type UserWithPreferences struct {
 	CountID     uint64
 	Preferences []uint64
 }
+
+type UserPair struct {
+	CountID     uint64
+	PairCountID uint64
+}

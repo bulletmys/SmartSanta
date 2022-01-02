@@ -88,7 +88,7 @@ func (u *UsersUC) UpdateUserPreferences(user *models.User) error {
 	if err != nil {
 		return err
 	}
-	if event.Status != models.STARTED {
+	if !(event.Status == models.STARTED || event.Status == models.FAILED) {
 		return errors.WrongEventStatus
 	}
 
@@ -97,23 +97,32 @@ func (u *UsersUC) UpdateUserPreferences(user *models.User) error {
 		return err
 	}
 
-	if ok := compareIDS(eventUsers, user.Preferences); !ok {
+	if ok := compareIDS(eventUsers, user); !ok {
 		return errors.WrongPreferencesID
 	}
 
-	return u.usersRepo.UpdateUserPreferences(user)
+	err = u.usersRepo.UpdateUserPreferences(user)
+	if err != nil {
+		return err
+	}
+
+	if event.Status == models.FAILED {
+		return u.eventsRepo.UpdEventStatus(event.ID, models.VOTED)
+	}
+
+	return nil
 }
 
 // Сверяем список count_id ивента из базы с предоставленным от пользователя
-func compareIDS(eventIDS []models.UserWithCountID, preferences []uint64) bool {
+func compareIDS(eventIDS []models.UserWithCountID, user *models.User) bool {
 	set := make(map[uint64]struct{}, len(eventIDS))
 
 	for _, usr := range eventIDS {
 		set[usr.CountID] = struct{}{}
 	}
 
-	for _, id := range preferences {
-		if _, ok := set[id]; !ok {
+	for _, id := range user.Preferences {
+		if _, ok := set[id]; !ok || id == user.CountID {
 			return false
 		}
 	}

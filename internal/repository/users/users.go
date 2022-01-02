@@ -82,28 +82,22 @@ where (p.sender_id::text = $1
 	return &user, nil
 }
 
-func (r *Repository) Pair(id, eventID string) (*models.UserShort, error) {
-	user := models.UserShort{}
+func (r *Repository) MakePairs(users []models.UserPair, eventID string) error {
+	query := `insert into pairs(sender_id, receiver_id, event_id) values($1, $2, $3)`
 
-	query := `select u.name, u.wish
-from pairs as p
-         join users u
-              on (p.receiver_id = u.user_id)
-where (p.sender_id::text = $1
-    and p.event_id::text = $2)`
-	err := r.db.QueryRow(context.Background(),
-		query,
-		id,
-		eventID,
-	).Scan(&user.Name, &user.Wish)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
+	for _, u := range users {
+		_, err := r.db.Exec(context.Background(),
+			query,
+			u.CountID,
+			u.PairCountID,
+			eventID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to insert pair: %v", err)
 		}
-		return nil, fmt.Errorf("failed to select pair: %v", err)
 	}
 
-	return &user, nil
+	return nil
 }
 
 func (r *Repository) GetPreferences(id, eventID string) ([]uint64, error) {
@@ -141,7 +135,7 @@ func (r *Repository) UpdateUserPreferences(user *models.User) error {
 }
 
 func (r *Repository) GetUsersByEventID(eventID string) ([]models.UserWithCountID, error) {
-	query := `select name, count_id from users where event_id::text = $1`
+	query := `select name, count_id from users where event_id::text = $1 and is_admin = false`
 	rows, err := r.db.Query(context.Background(),
 		query,
 		eventID,
@@ -190,4 +184,46 @@ func (r *Repository) CountVoted(eventID string) (int, error) {
 	}
 
 	return count, nil
+}
+
+func (r *Repository) GetUsersWithPreferences(eventID string) ([]models.UserWithPreferences, error) {
+	query := `select count_id, preferences from users where event_id::text = $1 and is_admin = false`
+	rows, err := r.db.Query(context.Background(),
+		query,
+		eventID,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to select user preferences: %v", err)
+	}
+
+	users := make([]models.UserWithPreferences, 0)
+	defer rows.Close()
+
+	for rows.Next() {
+		var user models.UserWithPreferences
+		var pref []sql.NullInt64
+
+		if err := rows.Scan(
+			&user.CountID,
+			pq.Array(&pref),
+		); err != nil {
+			return nil, fmt.Errorf("error while scaning users preferences: %v", err)
+		}
+
+		preferences := make([]uint64, len(pref))
+		for i, id := range pref {
+			preferences[i] = uint64(id.Int64)
+		}
+		user.Preferences = preferences
+
+		users = append(users, user)
+	}
+	if len(users) == 0 {
+		return nil, nil
+	}
+
+	return users, nil
 }
