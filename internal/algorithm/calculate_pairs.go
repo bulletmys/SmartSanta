@@ -1,7 +1,7 @@
 package algorithm
 
 type node struct {
-	id            int
+	id            uint64
 	sccID         int
 	visited       bool
 	edges, rEdges []uint64
@@ -24,9 +24,10 @@ func newGraph() *graph {
 	return &g
 }
 
-func newNode() *node {
+func newNode(id uint64) *node {
 	var n node
 	n.sccID = -1
+	n.id = id
 	return &n
 }
 
@@ -45,7 +46,7 @@ func (g *graph) addEdge(t, h uint64) bool {
 
 func (g *graph) addNode(label uint64) bool {
 	if _, ok := g.nodes[label]; !ok {
-		n := newNode()
+		n := newNode(label)
 		g.nodes[label] = n
 		return true
 	}
@@ -69,9 +70,40 @@ func (g *graph) createFinishingOrder() []*node {
 	return t
 }
 
+func (g *graph) removeParent(node *node) {
+	for _, edge := range node.edges {
+		childParents := g.nodes[edge].rEdges
+		newEdges := make([]uint64, 0, len(childParents)-1)
+		for _, rEdge := range childParents {
+			if rEdge != node.id {
+				newEdges = append(newEdges, rEdge)
+			}
+		}
+		g.nodes[edge].rEdges = newEdges
+	}
+}
+
+func (g *graph) removeUselessEdges() {
+	changed := true
+
+	for changed {
+		changed = false
+
+		for _, n := range g.nodes {
+			if len(n.rEdges) == 1 {
+				changed = true
+				parent := g.nodes[n.rEdges[0]]
+				g.removeParent(parent)
+				parent.edges = []uint64{n.id}
+			}
+		}
+	}
+
+}
+
 func (g *graph) generateScc() {
 	g.scc = make(map[int]*scc)
-	p := 1
+	p := 0
 	fo := g.createFinishingOrder()
 	g.resetVisited()
 	for i := len(fo) - 1; i >= 0; i-- {
@@ -101,8 +133,10 @@ func dfsMarkScc(n *node, g *graph, s int) {
 	n.visited = true
 
 	// ?? Если нода считалась другой компонентой связности ??
-	if n.sccID != 0 && n.sccID != s {
+	if n.sccID != -1 && n.sccID != s {
 		g.scc[n.sccID].len--
+	} else {
+		g.scc[s].len++
 	}
 
 	n.sccID = s
@@ -116,26 +150,27 @@ func dfsMarkScc(n *node, g *graph, s int) {
 // Нахождение Гамильтонова цикла в графе, состоящем
 // из вершин одной компоненты связанности
 func dfsFindPaths(first, n *node, g *graph, sccLen int) bool {
+	g.path = append(g.path, n.id)
 	n.visited = true
 	for _, neighbor := range n.edges {
 		if g.nodes[neighbor].sccID != n.sccID {
 			continue
 		}
 		if g.nodes[neighbor].visited == false {
-
-			g.path = append(g.path, neighbor)
-
 			res := dfsFindPaths(first, g.nodes[neighbor], g, sccLen)
 			if res {
 				return true
 			}
 		}
-		if n.id == first.id && len(g.path) == sccLen {
+		if neighbor == first.id && len(g.path) == sccLen {
 			return true
 		}
 	}
 
-	g.path = g.path[:len(g.path)-1]
+	if len(g.path) > 1 {
+		g.path = g.path[:len(g.path)-1]
+	}
+
 	n.visited = false
 
 	return false
@@ -151,6 +186,7 @@ func pathToPairs(path []uint64, pairs map[uint64]uint64) {
 
 func calculatePairs(g *graph) map[uint64]uint64 {
 	pairs := make(map[uint64]uint64)
+	g.resetVisited()
 
 	for _, v := range g.scc {
 		g.path = make([]uint64, 0)
@@ -178,6 +214,8 @@ func CountPreferences(nodes map[uint64][]uint64) map[uint64]uint64 {
 			}
 		}
 	}
+
+	g.removeUselessEdges()
 
 	g.generateScc()
 

@@ -52,6 +52,13 @@ func (u *EventsUC) StartEvent(eventID, userID string) error {
 	if event.Status != models.CREATED {
 		return errors.WrongEventStatus
 	}
+	users, err := u.usersRepo.GetUsersByEventID(eventID)
+	if err != nil {
+		return err
+	}
+	if users == nil || len(users) == 0 {
+		return errors.NoActiveUsers
+	}
 	user, err := u.usersRepo.GetUser(userID)
 	if err != nil {
 		return err
@@ -134,6 +141,7 @@ func (u *EventsUC) StartCount(event *models.Event) {
 	if pairs == nil {
 		log.Printf("failed to count pairs: %v", err)
 		u.MarkFailed(event)
+		return
 	}
 
 	err = u.usersRepo.MakePairs(convertPreferencesMapToModel(pairs), event.ID)
