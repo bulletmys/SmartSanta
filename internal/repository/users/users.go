@@ -135,7 +135,7 @@ func (r *Repository) UpdateUserPreferences(user *models.User) error {
 }
 
 func (r *Repository) GetUsersByEventID(eventID string) ([]models.UserWithCountID, error) {
-	query := `select name, count_id from users where event_id::text = $1 and is_admin = false`
+	query := `select name, count_id, is_admin from users where event_id::text = $1`
 	rows, err := r.db.Query(context.Background(),
 		query,
 		eventID,
@@ -152,18 +152,23 @@ func (r *Repository) GetUsersByEventID(eventID string) ([]models.UserWithCountID
 
 	for rows.Next() {
 		var userName models.UserWithCountID
+		var isAdmin bool
 
 		if err := rows.Scan(
 			&userName.Name,
 			&userName.CountID,
+			&isAdmin,
 		); err != nil {
 			return nil, fmt.Errorf("error while scaning event users: %v", err)
 		}
 
+		if isAdmin {
+			continue
+		}
 		users = append(users, userName)
 	}
 	if len(users) == 0 {
-		return nil, nil
+		return []models.UserWithCountID{}, nil
 	}
 
 	return users, nil
