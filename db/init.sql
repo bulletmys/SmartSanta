@@ -31,16 +31,5 @@ create table if not exists pairs
     PRIMARY KEY (sender_id, receiver_id, event_id)
 );
 
-create table if not exists preferences
-(
-    sender_id   uuid not null,
-    receiver_id uuid not null,
-    event_id    uuid not null,
-    FOREIGN KEY (event_id) REFERENCES events (event_id),
-    FOREIGN KEY (sender_id) REFERENCES users (user_id),
-    FOREIGN KEY (receiver_id) REFERENCES users (user_id),
-    PRIMARY KEY (sender_id, receiver_id, event_id)
-);
-
 CREATE INDEX IF NOT EXISTS idx_users_events ON users (event_id);
 CREATE INDEX IF NOT EXISTS idx_voted_users ON users (event_id, is_voted);
