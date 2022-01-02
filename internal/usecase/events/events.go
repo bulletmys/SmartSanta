@@ -70,5 +70,5 @@ func (u *EventsUC) FinishEvent(id string) error {
 	if event.Status != models.STARTED {
 		return errors.WrongEventStatus
 	}
-	return u.eventsRepo.UpdEventStatus(id, models.FINISHED)
+	return u.eventsRepo.UpdEventStatus(id, models.VOTED)
 }
